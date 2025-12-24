@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SEHC Festival 2025 - Pre-sale</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Roboto', sans-serif; -webkit-tap-highlight-color: transparent; }
+        /* Ẩn thanh cuộn nhưng vẫn cuộn được */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Animation cho Toast và Modal */
+        @keyframes slideInUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-up { animation: slideInUp 0.3s ease-out forwards; }
+        
+        /* Custom Loading Spinner */
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid #3b82f6;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 h-screen flex flex-col overflow-hidden">
+
+    <header class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 shadow-lg shrink-0 z-10">
+        <h1 class="text-xl font-bold text-center uppercase tracking-wide">SEHC Festival 2025</h1>
+        <p class="text-xs text-center text-blue-100 opacity-90">Gian hàng yêu thương</p>
+    </header>
+
+    <main class="flex-1 overflow-y-auto no-scrollbar relative p-4 pb-20">
+        
+        <div id="loadingOverlay" class="fixed inset-0 bg-white bg-opacity-90 z-50 flex flex-col items-center justify-center hidden">
+            <div class="loader mb-2 w-10 h-10 border-4 border-t-blue-600"></div>
+            <p class="text-gray-500 font-medium" id="loadingText">Đang tải dữ liệu...</p>
+        </div>
+
+        <div id="tab-presale" class="space-y-4">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 grid grid-cols-2 gap-4">
+                <div class="text-center border-r border-gray-100">
+                    <p class="text-xs text-gray-500">Doanh thu</p>
+                    <p class="text-lg font-bold text-green-600" id="stat-revenue">0 ₫</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-xs text-gray-500">Lượt quà đã tặng</p>
+                    <p class="text-lg font-bold text-orange-500" id="stat-gifts">0</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 space-y-4">
+                <h2 class="text-sm font-bold text-gray-700 uppercase border-b pb-2">Thông tin mua hàng</h2>
+                
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Mã nhân viên (8 số)</label>
+                    <div class="relative">
+                        <input type="tel" id="inp-emp-id" maxlength="8" placeholder="Nhập 8 số..." 
+                            class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg text-lg font-semibold tracking-widest focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all">
+                        <div id="emp-loading" class="absolute right-3 top-3 hidden"><div class="loader"></div></div>
+                    </div>
+                    <div id="emp-info-box" class="mt-2 p-2 bg-blue-50 rounded border border-blue-100 hidden">
+                        <p class="text-sm font-bold text-blue-800" id="out-emp-name">--</p>
+                        <p class="text-xs text-blue-600" id="out-emp-dept">--</p>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Số tiền (VND)</label>
+                    <input type="tel" id="inp-amount" placeholder="0" 
+                        class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg text-lg font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none text-right">
+                    <p class="text-xs text-right mt-1 text-orange-600 font-medium" id="out-gift-calc">Được tặng: 0 lượt</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Thanh toán qua</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="selectPayment('Cash')" class="pay-btn active ring-2 ring-blue-500 bg-blue-50 text-blue-700 py-2 rounded-lg text-sm font-medium border border-blue-200">Cash</button>
+                        <button onclick="selectPayment('Momo')" class="pay-btn bg-white text-gray-600 py-2 rounded-lg text-sm font-medium border border-gray-200">Momo</button>
+                        <button onclick="selectPayment('Bank')" class="pay-btn bg-white text-gray-600 py-2 rounded-lg text-sm font-medium border border-gray-200">Bank</button>
+                    </div>
+                </div>
+
+                <button onclick="handleBuy()" class="w-full bg-blue-600 active:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-200 transition-transform transform active:scale-95 flex justify-center items-center">
+                    <span>XÁC NHẬN MUA PHIẾU</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="tab-check" class="space-y-4 hidden">
+            <div class="bg-orange-50 p-4 rounded-xl border border-orange-100 text-center">
+                 <p class="text-xs text-orange-600 uppercase font-bold">Lượt chơi đã sử dụng</p>
+                 <p class="text-3xl font-bold text-orange-700 mt-1" id="stat-used-turns">0</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 space-y-5">
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Nhập mã Code quà tặng</label>
+                    <input type="text" id="inp-check-code" placeholder="VD: a5b9c" 
+                        class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg text-center text-2xl font-bold uppercase focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <button onclick="handleCheckCode()" class="w-full bg-orange-500 active:bg-orange-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-orange-200 transition-transform transform active:scale-95">
+                    KIỂM TRA & DÙNG CODE
+                </button>
+            </div>
+            
+            <div id="check-result" class="hidden animate-slide-up bg-green-50 border border-green-200 p-4 rounded-xl text-center">
+                <div class="inline-block p-2 bg-green-100 rounded-full text-green-600 mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                </div>
+                <h3 class="font-bold text-green-800 text-lg">Hợp lệ!</h3>
+                <p class="text-green-700 mt-1">NV: <span id="res-name" class="font-semibold">Nguyen Van A</span></p>
+                <p class="text-sm text-green-600">Được chơi: <span id="res-turns" class="font-bold text-lg">2</span> lượt</p>
+            </div>
+        </div>
+
+    </main>
+
+    <nav class="bg-white border-t border-gray-200 flex justify-around p-2 pb-safe fixed bottom-0 w-full shrink-0 z-20">
+        <button onclick="switchTab('presale')" id="nav-presale" class="flex flex-col items-center w-1/2 p-2 text-blue-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+            <span class="text-xs font-medium mt-1">Pre-sale</span>
+        </button>
+        <button onclick="switchTab('check')" id="nav-check" class="flex flex-col items-center w-1/2 p-2 text-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <span class="text-xs font-medium mt-1">Check Code</span>
+        </button>
+    </nav>
+
+    <div id="toast" class="fixed top-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-xl z-50 transition-all duration-300 opacity-0 translate-y-[-20px] pointer-events-none flex items-center gap-2 whitespace-nowrap">
+        <span id="toast-icon">ℹ️</span>
+        <span id="toast-msg">Thông báo</span>
+    </div>
+
+    <div id="success-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl w-full max-w-sm p-6 text-center shadow-2xl animate-slide-up">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Thành công!</h3>
+            <p class="text-gray-500 text-sm mb-4">Mã quà tặng của bạn là:</p>
+            <div class="bg-gray-100 p-4 rounded-lg mb-6 border-dashed border-2 border-gray-300">
+                <span id="modal-code" class="text-3xl font-mono font-bold tracking-widest text-blue-600">XXXXX</span>
+            </div>
+            <button onclick="closeModal()" class="w-full bg-gray-800 text-white font-bold py-3 rounded-xl">Đóng</button>
+        </div>
+    </div>
+
+    <div id="pwd-modal" class="fixed inset-0 bg-gray-900 z-[60] flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl w-full max-w-xs p-6 shadow-xl">
+            <h3 class="text-lg font-bold text-center mb-4">Nhập mật khẩu truy cập</h3>
+            <input type="password" id="inp-pwd" class="w-full border p-3 rounded-lg text-center mb-4 text-2xl" placeholder="****" inputmode="numeric">
+            <button onclick="checkPwd()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg">Mở khóa</button>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIG ---
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxqbHf8aBn5AsX_fFVgKySmIAF13qFJPf5w22KYpIulLuqz3SlXR2Mcsyum90mZ2zm_/exec'; // Thay URL của bạn vào đây
+        const GIFT_THRESHOLD = 200000;
+        
+        // --- STATE ---
+        let employeesCache = []; // Biến Global lưu danh sách nhân viên
+        let currentPayment = 'Cash';
+        let currentEmployee = null;
+
+        // --- INIT ---
+        window.onload = async function() {
+            // Focus vào ô pass
+            document.getElementById('inp-pwd').focus();
+            
+            // Gọi API lấy dữ liệu ngay khi tải trang (ngầm)
+            fetchEmployees();
+            fetchStats();
+        };
+
+        // --- AUTH ---
+        function checkPwd() {
+            const pwd = document.getElementById('inp-pwd').value;
+            if (pwd === '8888') {
+                document.getElementById('pwd-modal').classList.add('hidden');
+                showToast('Chào mừng!', '👋');
+            } else {
+                showToast('Sai mật khẩu!', '❌');
+                document.getElementById('inp-pwd').value = '';
+            }
+        }
+
+        // --- API CALLS ---
+        async function fetchEmployees() {
+            try {
+                // Không chặn UI, chạy ngầm
+                const response = await fetch(`${API_URL}?action=getEmployees`);
+                const json = await response.json();
+                if (json.status === 'success') {
+                    employeesCache = json.data;
+                    console.log(`Đã tải cache: ${employeesCache.length} nhân viên.`);
+                }
+            } catch (e) {
+                console.error("Lỗi tải data nhân viên", e);
+                showToast('Lỗi mạng: Không tải được DS nhân viên', '⚠️');
+            }
+        }
+
+        async function fetchStats() {
+            try {
+                const response = await fetch(`${API_URL}?action=getStats`);
+                const json = await response.json();
+                if (json.status === 'success') {
+                    // Format tiền Việt
+                    const formatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
+                    document.getElementById('stat-revenue').innerText = formatter.format(json.revenue);
+                    document.getElementById('stat-gifts').innerText = json.totalGiftTurns;
+                    document.getElementById('stat-used-turns').innerText = json.usedTurns;
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // --- LOGIC TAB 1: PRE-SALE ---
+        
+        // Xử lý tìm kiếm nhân viên (Instant Lookup)
+        const idInput = document.getElementById('inp-emp-id');
+        idInput.addEventListener('input', function(e) {
+            // Chỉ cho nhập số
+            this.value = this.value.replace(/[^0-9]/g, '');
+            const val = this.value;
+            
+            if (val.length === 8) {
+                if (employeesCache.length === 0) {
+                    showToast('Dữ liệu đang tải, vui lòng đợi...', '⏳');
+                    return;
+                }
+                
+                // Tìm kiếm trong Cache (Tốc độ 0ms)
+                const found = employeesCache.find(e => e.id === val);
+                
+                const infoBox = document.getElementById('emp-info-box');
+                if (found) {
+                    currentEmployee = found;
+                    document.getElementById('out-emp-name').innerText = found.name;
+                    document.getElementById('out-emp-dept').innerText = found.dept;
+                    infoBox.classList.remove('hidden');
+                } else {
+                    currentEmployee = null;
+                    document.getElementById('out-emp-name').innerText = 'Không tìm thấy NV';
+                    document.getElementById('out-emp-dept').innerText = '';
+                    infoBox.classList.remove('hidden');
+                }
+            } else {
+                document.getElementById('emp-info-box').classList.add('hidden');
+                currentEmployee = null;
+            }
+        });
+
+        // Xử lý tính toán tiền -> quà
+        const amountInput = document.getElementById('inp-amount');
+        amountInput.addEventListener('input', function(e) {
+            // Format số tiền có dấu chấm (optional but good for UX, here keep simple int)
+            this.value = this.value.replace(/[^0-9]/g, '');
+            const amount = parseInt(this.value) || 0;
+            const turns = Math.floor(amount / GIFT_THRESHOLD);
+            
+            const txt = document.getElementById('out-gift-calc');
+            txt.innerText = `Được tặng: ${turns} lượt`;
+            if(turns > 0) txt.classList.replace('text-gray-500', 'text-green-600');
+        });
+
+        function selectPayment(method) {
+            currentPayment = method;
+            document.querySelectorAll('.pay-btn').forEach(btn => {
+                btn.className = "pay-btn bg-white text-gray-600 py-2 rounded-lg text-sm font-medium border border-gray-200";
+            });
+            event.target.className = "pay-btn active ring-2 ring-blue-500 bg-blue-50 text-blue-700 py-2 rounded-lg text-sm font-medium border border-blue-200";
+        }
+
+        async function handleBuy() {
+            // Validate
+            if (!currentEmployee) return showToast('Chưa nhập đúng Mã NV', '⚠️');
+            const amount = parseInt(document.getElementById('inp-amount').value) || 0;
+            if (amount <= 0) return showToast('Vui lòng nhập số tiền', '⚠️');
+
+            const turns = Math.floor(amount / GIFT_THRESHOLD);
+            
+            // Gen Code
+            const giftCode = generateCode(5);
+
+            const payload = {
+                action: 'createSale',
+                empId: currentEmployee.id,
+                empName: currentEmployee.name,
+                empDept: currentEmployee.dept,
+                amount: amount,
+                paymentMethod: currentPayment,
+                giftTurns: turns,
+                giftCode: giftCode
+            };
+
+            // UI Loading
+            toggleLoading(true, "Đang xử lý...");
+
+            try {
+                // Gửi API (dùng no-cors nếu cần, nhưng ở đây ta cần response nên dùng chuẩn)
+                // Lưu ý: Apps Script doPost cần send stringified body
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                const json = await res.json();
+
+                if (json.status === 'success') {
+                    // Show modal
+                    document.getElementById('modal-code').innerText = giftCode;
+                    document.getElementById('success-modal').classList.remove('hidden');
+                    
+                    // Reset Form
+                    resetForm();
+                    fetchStats(); // Update stats background
+                } else {
+                    showToast('Lỗi: ' + json.message, '❌');
+                }
+            } catch (err) {
+                showToast('Lỗi kết nối server!', '❌');
+                console.error(err);
+            } finally {
+                toggleLoading(false);
+            }
+        }
+
+        // --- LOGIC TAB 2: CHECK CODE ---
+        async function handleCheckCode() {
+            const code = document.getElementById('inp-check-code').value;
+            if (!code) return showToast('Vui lòng nhập Code', '⚠️');
+
+            toggleLoading(true, "Đang kiểm tra...");
+            document.getElementById('check-result').classList.add('hidden');
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'useCode', code: code })
+                });
+                const json = await res.json();
+
+                if (json.status === 'success') {
+                    document.getElementById('res-name').innerText = json.info.name;
+                    document.getElementById('res-turns').innerText = json.info.turns;
+                    document.getElementById('check-result').classList.remove('hidden');
+                    document.getElementById('inp-check-code').value = ''; // clear
+                    fetchStats();
+                    showToast('Đổi quà thành công!', '✅');
+                } else {
+                    showToast(json.message, '❌');
+                }
+            } catch (err) {
+                showToast('Lỗi kết nối!', '❌');
+            } finally {
+                toggleLoading(false);
+            }
+        }
+
+        // --- UTILS ---
+        function generateCode(length) {
+            const chars = '0123456789abcdefghijklmnopqrstuvwxyz';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        function switchTab(tab) {
+            const tabPresale = document.getElementById('tab-presale');
+            const tabCheck = document.getElementById('tab-check');
+            const navPresale = document.getElementById('nav-presale');
+            const navCheck = document.getElementById('nav-check');
+
+            if (tab === 'presale') {
+                tabPresale.classList.remove('hidden');
+                tabCheck.classList.add('hidden');
+                
+                navPresale.classList.add('text-blue-600');
+                navPresale.classList.remove('text-gray-400');
+                navCheck.classList.add('text-gray-400');
+                navCheck.classList.remove('text-blue-600');
+            } else {
+                tabPresale.classList.add('hidden');
+                tabCheck.classList.remove('hidden');
+                
+                navCheck.classList.add('text-blue-600');
+                navCheck.classList.remove('text-gray-400');
+                navPresale.classList.add('text-gray-400');
+                navPresale.classList.remove('text-blue-600');
+            }
+        }
+
+        function showToast(msg, icon) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            document.getElementById('toast-icon').innerText = icon || 'ℹ️';
+            
+            toast.style.opacity = '1';
+            toast.style.transform = 'translate(-50%, 0)';
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, -20px)';
+            }, 3000);
+        }
+
+        function toggleLoading(show, text) {
+            const overlay = document.getElementById('loadingOverlay');
+            if(text) document.getElementById('loadingText').innerText = text;
+            if(show) overlay.classList.remove('hidden');
+            else overlay.classList.add('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('success-modal').classList.add('hidden');
+        }
+
+        function resetForm() {
+            document.getElementById('inp-emp-id').value = '';
+            document.getElementById('inp-amount').value = '';
+            document.getElementById('emp-info-box').classList.add('hidden');
+            document.getElementById('out-gift-calc').innerText = 'Được tặng: 0 lượt';
+            currentEmployee = null;
+        }
+    </script>
+</body>
+</html>
