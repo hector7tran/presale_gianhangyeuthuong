@@ -8,12 +8,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Roboto', sans-serif; -webkit-tap-highlight-color: transparent; }
-        .font-mono { font-family: 'Roboto Mono', monospace; } /* Font riêng cho Code */
+        .font-mono { font-family: 'Roboto Mono', monospace; }
         
         /* Ẩn thanh cuộn */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
+        /* Animations */
         @keyframes slideInUp {
             from { transform: translateY(100%); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
@@ -24,8 +25,8 @@
             border: 3px solid #f3f3f3;
             border-radius: 50%;
             border-top: 3px solid #3b82f6;
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -51,7 +52,7 @@
     <main class="flex-1 overflow-y-auto no-scrollbar relative p-4 pb-20 bg-gray-50">
         
         <div id="loadingOverlay" class="fixed inset-0 bg-white bg-opacity-80 z-50 flex flex-col items-center justify-center hidden">
-            <div class="loader w-8 h-8 border-4 border-t-blue-600 mb-2"></div>
+            <div class="loader mb-2 border-t-blue-600"></div>
             <p class="text-xs text-gray-500 font-medium">Đang xử lý...</p>
         </div>
 
@@ -66,13 +67,11 @@
                     <label class="block text-xs font-bold text-gray-500 mb-2 uppercase text-center">Nhập mã Code (5 ký tự)</label>
                     <input type="text" id="inp-check-code" maxlength="5" placeholder="abc12" 
                         class="w-full p-4 bg-gray-50 border-2 border-gray-200 rounded-xl text-center text-3xl font-mono font-bold tracking-widest focus:ring-2 focus:ring-orange-500 focus:outline-none lowercase text-gray-700 placeholder-gray-300">
-                     <p class="text-xs text-center text-gray-400 mt-2 italic">Tự động kiểm tra khi đủ 5 ký tự</p>
+                     <p class="text-xs text-center text-gray-400 mt-2 italic">Tự động hiển thị kết quả ngay lập tức</p>
                 </div>
 
-                <div id="check-info-area" class="hidden bg-gray-50 rounded-lg p-4 border border-gray-200 text-center">
-                    <div id="check-loading" class="hidden justify-center py-2"><div class="loader"></div></div>
-                    
-                    <div id="check-content" class="hidden">
+                <div id="check-info-area" class="hidden bg-gray-50 rounded-lg p-4 border border-gray-200 text-center animate-slide-up">
+                    <div id="check-content">
                         <p class="text-lg font-bold text-gray-800" id="res-name">--</p>
                         <p class="text-xs text-gray-500 mb-3" id="res-dept">--</p>
                         
@@ -81,10 +80,9 @@
                             <span class="text-3xl font-bold text-blue-600" id="res-turns">0</span>
                         </div>
 
-                        <div id="status-badge" class="mb-4">
-                            </div>
+                        <div id="status-badge" class="mb-4"></div>
 
-                        <button id="btn-use-code" onclick="confirmUseCode()" class="w-full bg-green-600 active:bg-green-700 text-white font-bold py-3 rounded-lg shadow-lg shadow-green-200 hidden animate-slide-up">
+                        <button id="btn-use-code" onclick="confirmUseCode()" class="w-full bg-green-600 active:bg-green-700 text-white font-bold py-3 rounded-lg shadow-lg shadow-green-200 hidden">
                             XÁC NHẬN DÙNG CODE
                         </button>
                          <p id="msg-used" class="text-red-500 font-bold hidden">Code này đã dùng rồi!</p>
@@ -124,7 +122,7 @@
 
                 <div class="text-center py-2">
                     <p class="text-xs text-gray-400 uppercase mb-1">Số lượt được tặng</p>
-                    <div class="text-5xl font-bold text-blue-600 transition-all duration-300 transform scale-100" id="big-gift-turns">0</div>
+                    <div class="text-5xl font-bold text-gray-300 transition-all duration-300 transform scale-100" id="big-gift-turns">0</div>
                 </div>
 
                 <div class="grid grid-cols-3 gap-2 text-xs">
@@ -177,24 +175,29 @@
         </div>
     </div>
 
-    <div id="toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-5 py-2.5 rounded-full shadow-xl z-[80] transition-all duration-300 opacity-0 translate-y-[-20px] pointer-events-none text-sm font-medium">
+    <div id="toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-5 py-2.5 rounded-full shadow-xl z-[80] transition-all duration-300 opacity-0 translate-y-[-20px] pointer-events-none text-sm font-medium whitespace-nowrap">
         <span id="toast-msg">Thông báo</span>
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbxqbHf8aBn5AsX_fFVgKySmIAF13qFJPf5w22KYpIulLuqz3SlXR2Mcsyum90mZ2zm_/exec'; // Thay URL mới của bạn vào đây
+        // --- CONFIG ---
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxqbHf8aBn5AsX_fFVgKySmIAF13qFJPf5w22KYpIulLuqz3SlXR2Mcsyum90mZ2zm_/exec'; // <--- THAY URL CỦA BẠN VÀO ĐÂY
         const GIFT_THRESHOLD = 200000;
-        
-        // Cache data
-        let employeesCache = [];
+
+        // --- STATE & CACHE ---
+        let employeesCache = []; // Cache DS nhân viên
+        let salesCache = [];     // Cache DS mã code (Local DB)
         let currentPayment = 'Cash';
         let currentEmployee = null;
         let isAuthenticated = false;
 
-        // Init
+        // --- INIT ---
         window.onload = function() {
-            fetchEmployees(); // Chạy ngầm
-            fetchStats();     // Chạy ngầm
+            // Tải song song dữ liệu
+            Promise.all([fetchEmployees(), fetchStatsAndSales()]);
+            
+            // Auto refresh dữ liệu mỗi 30s
+            setInterval(fetchStatsAndSales, 30000);
         };
 
         // --- NAVIGATION & SECURITY ---
@@ -209,20 +212,14 @@
                     document.getElementById('pwd-modal').classList.remove('hidden');
                     document.getElementById('inp-pwd').value = '';
                     document.getElementById('inp-pwd').focus();
-                    return; // Chặn lại
+                    return;
                 }
-                showPresaleUI();
-            } else {
-                showCheckUI();
-            }
-
-            function showPresaleUI() {
                 tabPresale.classList.remove('hidden');
                 tabCheck.classList.add('hidden');
                 navPresale.className = "flex-1 py-3 text-sm font-bold border-b-2 border-blue-600 text-blue-600 transition-colors";
                 navCheck.className = "flex-1 py-3 text-sm font-bold border-b-2 border-transparent text-gray-400 hover:text-gray-600 transition-colors";
-            }
-            function showCheckUI() {
+            } else {
+                fetchStatsAndSales(); // Refresh data khi chuyển tab
                 tabPresale.classList.add('hidden');
                 tabCheck.classList.remove('hidden');
                 navCheck.className = "flex-1 py-3 text-sm font-bold border-b-2 border-blue-600 text-blue-600 transition-colors";
@@ -231,41 +228,30 @@
         }
 
         function checkPwd() {
-            const pwd = document.getElementById('inp-pwd').value;
-            if (pwd === '8888') {
+            if (document.getElementById('inp-pwd').value === '8888') {
                 isAuthenticated = true;
                 document.getElementById('pwd-modal').classList.add('hidden');
                 switchTab('presale');
                 showToast('Đã mở khóa Pre-sale');
-            } else {
-                showToast('Mật khẩu sai!');
-            }
+            } else showToast('Mật khẩu sai!');
         }
-
-        function cancelAuth() {
-            document.getElementById('pwd-modal').classList.add('hidden');
-        }
+        function cancelAuth() { document.getElementById('pwd-modal').classList.add('hidden'); }
 
         // --- LOGIC TAB PRE-SALE ---
-        
-        // 1. Employee Lookup
-        document.getElementById('inp-emp-id').addEventListener('input', function(e) {
-            this.value = this.value.replace(/[^0-9]/g, ''); // Only numbers
+        document.getElementById('inp-emp-id').addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
             if (this.value.length === 8) {
                 const found = employeesCache.find(e => e.id === this.value);
                 const infoBox = document.getElementById('emp-info-box');
-                const nameEl = document.getElementById('out-emp-name');
-                const deptEl = document.getElementById('out-emp-dept');
-                
                 infoBox.classList.remove('hidden');
                 if (found) {
                     currentEmployee = found;
-                    nameEl.innerText = found.name;
-                    deptEl.innerText = found.dept;
+                    document.getElementById('out-emp-name').innerText = found.name;
+                    document.getElementById('out-emp-dept').innerText = found.dept;
                 } else {
                     currentEmployee = null;
-                    nameEl.innerText = 'Không tìm thấy';
-                    deptEl.innerText = '';
+                    document.getElementById('out-emp-name').innerText = 'Không tìm thấy';
+                    document.getElementById('out-emp-dept').innerText = '';
                 }
             } else {
                 document.getElementById('emp-info-box').classList.add('hidden');
@@ -273,211 +259,154 @@
             }
         });
 
-        // 2. Money Format & Calc
-        document.getElementById('inp-amount').addEventListener('input', function(e) {
-            // Lấy giá trị raw số
-            let rawValue = this.value.replace(/,/g, ''); 
-            if (!rawValue) {
-                this.value = '';
-                updateGiftTurns(0);
-                return;
-            }
-            
-            // Format 100,000
-            if (!isNaN(rawValue)) {
-                let num = parseInt(rawValue);
-                this.value = num.toLocaleString('en-US'); // Thêm dấu phẩy
-                
-                // Tính quà
-                const turns = Math.floor(num / GIFT_THRESHOLD);
-                updateGiftTurns(turns);
+        document.getElementById('inp-amount').addEventListener('input', function() {
+            let raw = this.value.replace(/,/g, '');
+            if (!raw) { this.value = ''; updateGiftTurns(0); return; }
+            if (!isNaN(raw)) {
+                let num = parseInt(raw);
+                this.value = num.toLocaleString('en-US');
+                updateGiftTurns(Math.floor(num / GIFT_THRESHOLD));
             }
         });
 
         function updateGiftTurns(turns) {
             const el = document.getElementById('big-gift-turns');
             el.innerText = turns;
-            if (turns > 0) {
-                el.classList.add('text-blue-600', 'scale-110');
-                el.classList.remove('text-gray-400');
-            } else {
-                el.classList.remove('text-blue-600', 'scale-110');
-                el.classList.add('text-gray-400');
-            }
+            if(turns > 0) { el.classList.add('text-blue-600', 'scale-110'); el.classList.remove('text-gray-300'); }
+            else { el.classList.remove('text-blue-600', 'scale-110'); el.classList.add('text-gray-300'); }
         }
 
-        function selectPayment(method) {
-            currentPayment = method;
-            document.querySelectorAll('.pay-btn').forEach(btn => {
-                btn.className = "pay-btn bg-white text-gray-500 py-2.5 rounded font-medium border border-gray-200";
-            });
-            event.target.className = "pay-btn ring-2 ring-blue-500 bg-blue-50 text-blue-700 py-2.5 rounded font-bold border border-blue-200";
+        function selectPayment(m) {
+            currentPayment = m;
+            document.querySelectorAll('.pay-btn').forEach(b => b.className="pay-btn bg-white text-gray-500 py-2.5 rounded font-medium border border-gray-200");
+            event.target.className="pay-btn ring-2 ring-blue-500 bg-blue-50 text-blue-700 py-2.5 rounded font-bold border border-blue-200";
         }
 
-        // 3. OPTIMISTIC BUY (Tối ưu tốc độ)
-        async function handleBuyOptimistic() {
-            // Validate
+        // MUA HÀNG OPTIMISTIC (HIỆN NGAY LẬP TỨC)
+        function handleBuyOptimistic() {
             if (!currentEmployee) return showToast('Chưa nhập Mã NV');
-            const rawAmount = parseInt(document.getElementById('inp-amount').value.replace(/,/g, '')) || 0;
-            if (rawAmount <= 0) return showToast('Chưa nhập số tiền');
+            const amount = parseInt(document.getElementById('inp-amount').value.replace(/,/g, '')) || 0;
+            if (amount <= 0) return showToast('Chưa nhập số tiền');
 
-            const turns = Math.floor(rawAmount / GIFT_THRESHOLD);
-            const giftCode = generateCode(5); // Code thường, số và chữ
+            const turns = Math.floor(amount / GIFT_THRESHOLD);
+            const code = generateCode(5);
 
-            // --- OPTIMISTIC UI: HIỆN THÀNH CÔNG NGAY ---
-            // Không đợi server
-            document.getElementById('modal-code').innerText = giftCode;
+            // Update UI ngay
+            document.getElementById('modal-code').innerText = code;
             document.getElementById('modal-turns').innerText = turns;
             document.getElementById('success-modal').classList.remove('hidden');
+            
+            // Update Local Cache ngay để có thể check ngay
+            salesCache.push({
+                c: code,
+                n: currentEmployee.name,
+                d: currentEmployee.dept,
+                t: turns,
+                s: 'Active'
+            });
 
-            // Reset form UI ngay lập tức để sẵn sàng cho đơn tiếp theo
-            resetPresaleForm();
+            // Reset Form UI
+            document.getElementById('inp-amount').value = '';
+            updateGiftTurns(0);
 
-            // --- BACKGROUND TASK: GỬI LÊN SERVER ---
+            // Gửi Server (Background)
             const payload = {
-                action: 'createSale',
-                empId: currentEmployee.id,
-                empName: currentEmployee.name,
-                empDept: currentEmployee.dept,
-                amount: rawAmount,
-                paymentMethod: currentPayment,
-                giftTurns: turns,
-                giftCode: giftCode
+                action: 'createSale', empId: currentEmployee.id, empName: currentEmployee.name,
+                empDept: currentEmployee.dept, amount: amount, paymentMethod: currentPayment,
+                giftTurns: turns, giftCode: code
             };
-
-            // Gửi ngầm, không await để chặn UI, chỉ log lỗi nếu có
-            fetch(API_URL, {
-                method: 'POST',
-                body: JSON.stringify(payload)
-            }).then(res => res.json()).then(json => {
-                console.log("Synced to sheet:", json);
-                fetchStats(); // Update stats sau khi server xong
-            }).catch(err => console.error("Sync error:", err));
+            fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) })
+                .then(() => fetchStatsAndSales())
+                .catch(e => console.error(e));
         }
 
-        // --- LOGIC TAB CHECK CODE ---
-        
-        // Auto check khi nhập đủ 5 ký tự
-        document.getElementById('inp-check-code').addEventListener('input', function(e) {
-            // Force lowercase
+        // --- LOGIC TAB CHECK CODE (LOCAL SEARCH - 0ms) ---
+        document.getElementById('inp-check-code').addEventListener('input', function() {
             const val = this.value.toLowerCase();
-            this.value = val; 
+            this.value = val;
             
             if (val.length === 5) {
-                doCheckCodeInfo(val);
+                checkCodeLocally(val);
             } else {
-                // Reset UI nếu xóa bớt
                 document.getElementById('check-info-area').classList.add('hidden');
             }
         });
 
-        async function doCheckCodeInfo(code) {
-            // UI Loading state
+        function checkCodeLocally(code) {
+            // Tìm trong RAM
+            const found = salesCache.find(item => item.c === code);
+            
             const area = document.getElementById('check-info-area');
-            const loading = document.getElementById('check-loading');
-            const content = document.getElementById('check-content');
+            const btnUse = document.getElementById('btn-use-code');
+            const msgUsed = document.getElementById('msg-used');
+            const badge = document.getElementById('status-badge');
             
             area.classList.remove('hidden');
-            loading.classList.remove('hidden'); // Show loader
-            loading.classList.add('flex');
-            content.classList.add('hidden');
 
-            try {
-                const res = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'checkCodeInfo', code: code })
-                });
-                const json = await res.json();
-                
-                loading.classList.add('hidden');
-                loading.classList.remove('flex');
-                content.classList.remove('hidden');
+            if (found) {
+                document.getElementById('res-name').innerText = found.n;
+                document.getElementById('res-dept').innerText = found.d;
+                document.getElementById('res-turns').innerText = found.t;
 
-                if (json.status === 'success') {
-                    // Fill Data
-                    document.getElementById('res-name').innerText = json.info.name;
-                    document.getElementById('res-dept').innerText = json.info.dept;
-                    document.getElementById('res-turns').innerText = json.info.turns;
-                    
-                    const btnUse = document.getElementById('btn-use-code');
-                    const msgUsed = document.getElementById('msg-used');
-                    const badge = document.getElementById('status-badge');
-
-                    if (json.info.status === 'Used') {
-                        badge.innerHTML = '<span class="px-2 py-1 bg-red-100 text-red-600 text-xs font-bold rounded">ĐÃ SỬ DỤNG</span>';
-                        btnUse.classList.add('hidden');
-                        msgUsed.classList.remove('hidden');
-                    } else {
-                        badge.innerHTML = '<span class="px-2 py-1 bg-green-100 text-green-600 text-xs font-bold rounded">HỢP LỆ</span>';
-                        btnUse.classList.remove('hidden'); // Hiện nút xác nhận
-                        msgUsed.classList.add('hidden');
-                    }
+                if (found.s === 'Used') {
+                    badge.innerHTML = '<span class="px-2 py-1 bg-red-100 text-red-600 text-xs font-bold rounded">ĐÃ SỬ DỤNG</span>';
+                    btnUse.classList.add('hidden');
+                    msgUsed.classList.remove('hidden');
                 } else {
-                    document.getElementById('res-name').innerText = "Mã không tồn tại";
-                    document.getElementById('res-dept').innerText = "";
-                    document.getElementById('res-turns').innerText = "0";
-                    document.getElementById('status-badge').innerHTML = "";
-                    document.getElementById('btn-use-code').classList.add('hidden');
+                    badge.innerHTML = '<span class="px-2 py-1 bg-green-100 text-green-600 text-xs font-bold rounded">HỢP LỆ</span>';
+                    btnUse.classList.remove('hidden');
+                    msgUsed.classList.add('hidden');
                 }
-
-            } catch (err) {
-                console.error(err);
-                showToast('Lỗi mạng');
+            } else {
+                document.getElementById('res-name').innerText = "Mã không tồn tại";
+                document.getElementById('res-dept').innerText = "";
+                document.getElementById('res-turns').innerText = "0";
+                badge.innerHTML = "";
+                btnUse.classList.add('hidden');
+                msgUsed.classList.add('hidden');
             }
         }
 
         async function confirmUseCode() {
             const code = document.getElementById('inp-check-code').value;
             toggleLoading(true);
+
             try {
                 const res = await fetch(API_URL, {
                     method: 'POST',
                     body: JSON.stringify({ action: 'useCode', code: code })
                 });
                 const json = await res.json();
+                
                 if (json.status === 'success') {
                     showToast('Đã dùng code thành công!');
+                    
+                    // Update Local Cache ngay
+                    const item = salesCache.find(x => x.c === code);
+                    if(item) item.s = 'Used'; 
+                    
                     // Reset UI
                     document.getElementById('inp-check-code').value = '';
                     document.getElementById('check-info-area').classList.add('hidden');
-                    fetchStats();
+                    fetchStatsAndSales(); // Sync lại
                 } else {
                     showToast(json.message);
+                    fetchStatsAndSales();
                 }
             } catch(e) { showToast('Lỗi kết nối'); }
             finally { toggleLoading(false); }
         }
 
-        // --- UTILS ---
-        function generateCode(length) {
-            // Bỏ các ký tự dễ nhầm: o, 0, 1, l, i
-            const chars = '23456789abcdefghjkmnpqrstuvwxyz'; 
-            let result = '';
-            for (let i = 0; i < length; i++) {
-                result += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return result;
-        }
-
-        function closeModal() {
-            document.getElementById('success-modal').classList.add('hidden');
-        }
-
-        function resetPresaleForm() {
-            // Chỉ xóa tiền và quà, giữ lại Mã NV để lỡ nhập tiếp cho người đó
-            document.getElementById('inp-amount').value = '';
-            updateGiftTurns(0);
-        }
-        
+        // --- FETCHING DATA ---
         async function fetchEmployees() {
             try {
                 const res = await fetch(`${API_URL}?action=getEmployees`);
                 const json = await res.json();
                 if (json.status === 'success') employeesCache = json.data;
-            } catch (e) { console.log('Err load emp'); }
+            } catch(e) {}
         }
-        
-        async function fetchStats() {
+
+        async function fetchStatsAndSales() {
             try {
                 const res = await fetch(`${API_URL}?action=getStats`);
                 const json = await res.json();
@@ -486,25 +415,26 @@
                     document.getElementById('stat-revenue').innerText = fmt.format(json.revenue);
                     document.getElementById('stat-gifts').innerText = json.totalGiftTurns;
                     document.getElementById('stat-used-turns').innerText = json.usedTurns;
+                    
+                    if (json.salesData) salesCache = json.salesData;
                 }
-            } catch (e) {}
+            } catch(e) {}
         }
 
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            document.getElementById('toast-msg').innerText = msg;
-            toast.style.opacity = '1';
-            toast.style.transform = 'translate(-50%, 0)';
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translate(-50%, -20px)';
-            }, 2000);
+        // --- UTILS ---
+        function generateCode(len) {
+            // Loại bỏ ký tự dễ nhầm (0,o,1,l,i)
+            const c = '23456789abcdefghjkmnpqrstuvwxyz'; 
+            let r = ''; for(let i=0; i<len; i++) r += c.charAt(Math.floor(Math.random()*c.length));
+            return r;
         }
-        
-        function toggleLoading(show) {
-            const el = document.getElementById('loadingOverlay');
-            if(show) el.classList.remove('hidden'); else el.classList.add('hidden');
+        function closeModal() { document.getElementById('success-modal').classList.add('hidden'); }
+        function showToast(m) {
+            const t = document.getElementById('toast'); document.getElementById('toast-msg').innerText=m;
+            t.style.opacity='1'; t.style.transform='translate(-50%,0)';
+            setTimeout(()=>{t.style.opacity='0'; t.style.transform='translate(-50%,-20px)';},2000);
         }
+        function toggleLoading(s) { document.getElementById('loadingOverlay').classList.toggle('hidden', !s); }
     </script>
 </body>
 </html>
